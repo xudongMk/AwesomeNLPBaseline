@@ -6,7 +6,6 @@
 # @Software: PyCharm
 
 import sys
-import os
 import time
 import tensorflow as tf
 import tf_metrics
@@ -22,22 +21,22 @@ from models.ffnn_model import FCModel
 # 设置参数
 parser = ArgumentParser()
 
-parser.add_argument("--train_path", type=str, default='./data_path/imdb.pkl',
+parser.add_argument("--train_path", type=str, default='./data_path/tnews_data.pkl',
                     help='the file path of train data, needs pkl type')
-parser.add_argument("--test_path", type=str, default='./data_path/imdb.pkl',
+parser.add_argument("--eval_path", type=str, default='./data_path/tnews_data.pkl',
                     help='the file path of test data, needs pkl type')
 parser.add_argument("--model_ckpt_dir", type=str, default='./model_ckpt/',
                     help='the dir of the checkpoint type model')
 parser.add_argument("--model_pb_dir", type=str, default='./model_pb',
                     help='the dir of the pb type model')
 
-parser.add_argument("--vocab_size", type=int, default=20000, help='the vocab size')
+parser.add_argument("--vocab_size", type=int, default=68000, help='the vocab size')
 parser.add_argument("--emb_size", type=int, default=300, help='the embedding size')
 parser.add_argument("--hidden_size", type=int, default=300,
                     help='the hidden size of rnn layer, will split it half in rnn')
 parser.add_argument("--fc_layer_size", type=int, default=300,
                     help='the hidden size of fully connect layer')
-parser.add_argument("--num_label", type=int, default=2, help='the number of task label')
+parser.add_argument("--num_label", type=int, default=15, help='the number of task label')
 parser.add_argument("--drop_out", type=float, default=0.2,
                     help='the dropout rate in layers')
 parser.add_argument("--batch_size", type=int, default=16,
@@ -54,7 +53,7 @@ parser.add_argument("--filter_num", type=int, default=128,
                     help='the number of the cnn filters')
 parser.add_argument("--use_pos", type=int, default=0,
                     help='whether to use position encoding in embedding layer')
-parser.add_argument("--lr", type=float, default=1e-4,
+parser.add_argument("--lr", type=float, default=1e-3,
                     help='the learning rate for optimizer')
 
 
@@ -134,11 +133,12 @@ def model_fn(features, labels, mode, params):
     else:
         if mode == tf.estimator.ModeKeys.TRAIN:
             logits = model(words, training=True)
-            # weights = tf.constant([])
-            # weights = tf.gather(weights, labels)
+            weights = tf.constant(
+                [0.9, 0.9, 0.9, 0.9, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.2, 1.5])
+            weights = tf.gather(weights, labels)
             loss = tf.losses.sparse_softmax_cross_entropy(
                 labels, logits,
-                # weights=weights,
+                weights=weights,
                 reduction=tf.losses.Reduction.MEAN)
             prediction = tf.argmax(logits, axis=1)
             accuracy = tf.metrics.accuracy(labels=labels,
@@ -154,6 +154,7 @@ def model_fn(features, labels, mode, params):
         else:
             logits = model(words, training=False)
             prediction = tf.argmax(logits, axis=1)
+            # tf原始的metrics不支持多类别计算
             precision = tf_metrics.precision(labels, prediction, ARGS.num_label)
             recall = tf_metrics.recall(labels, prediction, ARGS.num_label)
             accuracy = tf.metrics.accuracy(labels, predictions=prediction)
@@ -191,8 +192,8 @@ def main_es(unparsed):
     classifer.train(input_fn=train_input, hooks=[logging_hook])
 
     # eval model
-    test_input = init_data(ARGS.test_path, 'test')
-    eval_res = classifer.evaluate(input_fn=test_input)
+    eval_input = init_data(ARGS.eval_path, 'test')
+    eval_res = classifer.evaluate(input_fn=eval_input)
     print(f'Evaluation res is : \n\t{eval_res}')
 
     if ARGS.model_pb_dir:
