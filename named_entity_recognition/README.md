@@ -2,9 +2,6 @@
 
 这里首先介绍一篇基于深度学习的命名实体识别综述，《A Survey on Deep Learning for Named Entity Recognition》，论文来源：https://arxiv.org/abs/1812.09449（2020年3月份发表在TKDE）
 
-https://zhuanlan.zhihu.com/p/141088583
-
-https://github.com/luopeixiang/named_entity_recognition
 
 **1.命名实体识别简介**
 
