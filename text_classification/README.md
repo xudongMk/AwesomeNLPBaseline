@@ -54,7 +54,7 @@ Deep Learning Based Text Classification: A Comprehensive Review一文中提到�
 | 情感分析 | OCEMOTION–中文情感分类，对应文章https://www.aclweb.org/anthology/L16-1291.pdf<br />原始数据集未找到，只有一部分数据 | 下载地址 |
 | 更新ing  | ...                                                          | ...      |
 
-还有一些其他的中文文本数据集，可以在CLUE上搜索，CLUE地址：https://www.cluebenchmarks.com/，但是下载需要注册账号，有的链接失效，有的限制日下载次数，这里放到百度网盘供下载学习使用。（请勿用于商业目的）
+还有一些其他的中文文本数据集，可以在CLUE上搜索，CLUE地址：https://www.cluebenchmarks.com/ ，但是下载需要注册账号，有的链接失效，有的限制日下载次数，这里放到百度网盘供下载学习使用。（请勿用于商业目的）
 
 
 
