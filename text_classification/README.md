@@ -138,15 +138,16 @@ python==3.7
 - train_path/eval_path：数据集的路径
 - weights权重设置：根据数据EDA中的类别标签分布，设置weights=[0.9,0.9,0.9,0.9,1,1,1,1,1,1,1,1,1,1.2,1.5]，后面几个类别的数量明显很少，权重设置大一点。具体数值自己根据个人分析来定义
 
-其他的参数视个人情况而定
+其他的参数视个人情况而定.
 
 **3.模型训练并保存模型**
 
+这里设置模型类型是BiLstm
 代码中保存了两种模型形式，一种是checkpoint，另一种是pb格式
 
 **4.开始预测并提交结果**
 
-**5.查看指标得分**
+预测代码见inferecen.py，最后在CLUE上提交的结果是50.92（[ALBERT-xxlarge](https://github.com/google-research/albert) ：59.46，目前[UER-ensemble](https://github.com/dbiir/UER-py)：72.20）
 
 ## 中文文本分类比赛OR评测
 
