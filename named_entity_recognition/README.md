@@ -2,6 +2,9 @@
 
 这里首先介绍一篇基于深度学习的命名实体识别综述，《A Survey on Deep Learning for Named Entity Recognition》，论文来源：https://arxiv.org/abs/1812.09449（2020年3月份发表在TKDE）
 
+https://zhuanlan.zhihu.com/p/141088583
+
+https://github.com/luopeixiang/named_entity_recognition
 
 **1.命名实体识别简介**
 
@@ -28,7 +31,7 @@ NER任务最早是由第六届语义理解会议（Sixth Message Understanding C
 
 这里不在展开描述具体的内容（有兴趣的可以去翻论文），下表总结了基于神经网络的NER模型的工作，并展示了每个NER模型在各类数据集上的表现。
 
-![](E:\AwesomeNLPBaseLine\命名实体识别的模型总结图.png)
+![image](https://github.com/xudongMk/AwesomeNLPBaseline/blob/main/named_entity_recognition/pics/%E5%91%BD%E5%90%8D%E5%AE%9E%E4%BD%93%E8%AF%86%E5%88%AB%E7%9A%84%E6%A8%A1%E5%9E%8B%E6%80%BB%E7%BB%93%E5%9B%BE.png)
 
 总结：BiLstm+CRF是使用深度学习的NER最常见的体系结构，以Cloze风格使用预训练双向Transformer在CoNLL03数据集上达到了SOTA效果（93.5%），另外Bert+Dice Loss在OntoNotes5.0数据集上达到了SOTA效果（92.07%）。
 
@@ -50,7 +53,7 @@ NER任务最早是由第六届语义理解会议（Sixth Message Understanding C
 
 首先是综述中提到的几个数据集，见下表，具体的就不介绍了。
 
-![image-20201214234022320](E:\AwesomeNLPBaseLine\命名实体识别数据图)
+![image](https://github.com/xudongMk/AwesomeNLPBaseline/blob/main/named_entity_recognition/pics/%E5%91%BD%E5%90%8D%E5%AE%9E%E4%BD%93%E8%AF%86%E5%88%AB%E6%95%B0%E6%8D%AE%E5%9B%BE.png)
 
 
 
@@ -97,36 +100,11 @@ python==3.7
 
 - 推理代码在inference.py中
 
-**模型参数解释**
-
-- train_path/test_path：训练集/测试集文件路径
-- model_ckpt_dir：模型checkpoint的保存路径
-- model_pb_dir：pb形式的模型保存路径
-- vocab_size：词表大小
-- emb_size：embedding层的大小
-- hidden_dim：rnn的隐层大小
-- num_tags：标签的数量
-- drop_out：dropout rate
-- batch_size：批处理样本大小
-- epoch：全样本迭代的次数
-- type：使用具体的模型来文本分类，有lstm、cnn等
-- lr：学习率大小
-
-
-
-#todo 直接加入 数据集的结果对比
-
 
 
 ## 示例
 
-
-
-NER的应用：
-
-https://tech.meituan.com/2020/07/23/ner-in-meituan-nlp.html
-
-美团搜索中NER技术的探索和实践
+todo
 
 
 
@@ -138,3 +116,12 @@ https://tech.meituan.com/2020/07/23/ner-in-meituan-nlp.html
 
 3.CLUE的评测
 
+
+
+## 扩展
+
+NER的应用：
+
+https://tech.meituan.com/2020/07/23/ner-in-meituan-nlp.html
+
+美团搜索中NER技术的探索和实践
