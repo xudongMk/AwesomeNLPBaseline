@@ -44,7 +44,7 @@ def cut_with_jieba(text, filter=None):
         for c in filter:
             text = text.replace(c, '')
     words = ['Number' if word.isdigit() else word for word in jieba.cut(text)]
-    return ' '.join(words)
+    return words
 
 
 def words_to_ids(words, word_dict):
