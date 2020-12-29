@@ -69,6 +69,8 @@ NER任务最早是由第六届语义理解会议（Sixth Message Understanding C
 
 使用Tensorflow1.x版本Estimator高阶api实现常见的命名实体识别算法，主要包括BiLstm+CRF、Bert、Bert+CRF。
 
+（当前只在本目录下实现了BiLstm+CRF，至于BERT的在bert_downstream目录下暂未实现）
+
 环境信息：
 
 tensorflow==1.13.1
@@ -110,11 +112,9 @@ todo
 
 ## NER的比赛
 
-1.达观数据的
+1.天池的比赛 https://tianchi.aliyun.com/competition/entrance/531824/introduction
 
-2.天池的比赛
-
-3.CLUE的评测
+2.CLUE的评测 https://www.cluebenchmarks.com/introduce.html
 
 
 
