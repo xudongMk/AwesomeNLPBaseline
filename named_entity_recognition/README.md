@@ -2,10 +2,6 @@
 
 这里首先介绍一篇基于深度学习的命名实体识别综述，《A Survey on Deep Learning for Named Entity Recognition》，论文来源：https://arxiv.org/abs/1812.09449（2020年3月份发表在TKDE）
 
-https://zhuanlan.zhihu.com/p/141088583
-
-https://github.com/luopeixiang/named_entity_recognition
-
 **1.命名实体识别简介**
 
 命名实体识别（Named Entity Recognition，NER）旨在给定的文本中识别出属于预定义的类别片段（如人名、位置、组织等）。NER一直是很多自然语言应用的基础，如机器问答、文本摘要和机器翻译。
