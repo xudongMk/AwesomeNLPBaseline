@@ -5,6 +5,9 @@ import math
 import os
 import random
 import pandas as pd
+import numpy as np
+import json
+import tqdm
 
 import bert_master.modeling as modeling
 import bert_master.optimization as optimization
@@ -55,7 +58,7 @@ flags.DEFINE_integer("predict_batch_size", 8, "Total batch size for predict.")
 
 flags.DEFINE_float("learning_rate", 5e-5, "The initial learning rate for Adam.")
 
-flags.DEFINE_integer("num_train_epochs", 1,
+flags.DEFINE_integer("num_train_epochs", 3,
                      "Total number of training epochs to perform.")
 
 flags.DEFINE_float(
@@ -138,7 +141,7 @@ class DataProcessor(object):
 
     @classmethod
     def _read_csv(cls, input_file, task):
-        data = pd.read_csv(input_file, sep='\t', encoding='utf-8')
+        data = pd.read_csv(input_file, sep='\t', encoding='utf-8', header=None)
         if task == 'nli':
             data.columns = ['id', 'texta', 'textb', 'label']
         else:
@@ -149,6 +152,22 @@ class DataProcessor(object):
                 lines.append((row['texta'], row['textb'], row['label']))
             else:
                 lines.append((row['text'], row['label']))
+        return lines
+
+    @classmethod
+    def _read_test(cls, input_file, task):
+        data = pd.read_csv(input_file, sep='\t', encoding='utf-8', header=None)
+        if task == 'nli':
+            data.columns = ['id', 'texta', 'textb']
+        else:
+            data.columns = ['id', 'text']
+        lines = []
+        # 添加id防止预测提交出错
+        for index, row in data.iterrows():
+            if task == 'nli':
+                lines.append((row['id'], row['texta'], row['textb']))
+            else:
+                lines.append((row['id'], row['text']))
         return lines
 
 
@@ -177,7 +196,13 @@ class AllProcessor(DataProcessor):
 
     def get_test_examples(self, data_dir):
         """See base class."""
-        pass
+        emotion_dir = os.path.join(data_dir, 'test_emotion.csv')
+        news_dir = os.path.join(data_dir, 'test_news.csv')
+        nli_dir = os.path.join(data_dir, 'test_nli.csv')
+        emotion_lines = self._read_test(emotion_dir, 'emotion')
+        news_lines = self._read_test(news_dir, 'news')
+        nli_lines = self._read_test(nli_dir, 'nli')
+        return self._create_examples(emotion_lines, news_lines, nli_lines, 'test')
 
     def get_labels(self):
         """See base class."""
@@ -195,8 +220,9 @@ class AllProcessor(DataProcessor):
         for (i, line) in enumerate(emotion_lines):
             guid = "%s-%s" % (set_type, i)
             if set_type == "test":
-                text_a = tokenization.convert_to_unicode(line[0])
-                label = "0"
+                text_a = tokenization.convert_to_unicode(line[1])
+                label = None
+                guid = line[0]
             else:
                 text_a = tokenization.convert_to_unicode(line[0])
                 label = tokenization.convert_to_unicode(line[1])
@@ -207,8 +233,9 @@ class AllProcessor(DataProcessor):
         for i, line in enumerate(news_lines):
             guid = f'news_{set_type}_{i}'
             if set_type == 'test':
-                text_a = tokenization.convert_to_unicode(line[0])
-                label = "0"
+                text_a = tokenization.convert_to_unicode(line[1])
+                label = None
+                guid = line[0]
             else:
                 text_a = tokenization.convert_to_unicode(line[0])
                 label = tokenization.convert_to_unicode(str(line[1]))
@@ -220,9 +247,10 @@ class AllProcessor(DataProcessor):
         for i, line in enumerate(nli_lines):
             guid = f'news_{set_type}_{i}'
             if set_type == 'test':
-                text_a = tokenization.convert_to_unicode(line[0])
-                text_b = tokenization.convert_to_unicode(line[1])
-                label = "0"
+                text_a = tokenization.convert_to_unicode(line[1])
+                text_b = tokenization.convert_to_unicode(line[2])
+                label = None
+                guid = line[0]
             else:
                 text_a = tokenization.convert_to_unicode(line[0])
                 text_b = tokenization.convert_to_unicode(line[1])
@@ -237,15 +265,6 @@ class AllProcessor(DataProcessor):
 def convert_single_example(ex_index, example, label_list, max_seq_length,
                            tokenizer):
     """Converts a single `InputExample` into a single `InputFeatures`."""
-
-    if isinstance(example, PaddingInputExample):
-        return InputFeatures(
-            input_ids=[0] * max_seq_length,
-            input_mask=[0] * max_seq_length,
-            segment_ids=[0] * max_seq_length,
-            label_id=0,
-            task=0,
-            is_real_example=False)
 
     emotion_label_map = {}
     news_label_map = {}
@@ -298,11 +317,13 @@ def convert_single_example(ex_index, example, label_list, max_seq_length,
     assert len(input_ids) == max_seq_length
     assert len(input_mask) == max_seq_length
     assert len(segment_ids) == max_seq_length
-
     task = example.task
-    if task == '1': label_id = emotion_label_map[example.label]
-    if task == '2': label_id = news_label_map[example.label]
-    if task == '3': label_id = nli_label_map[example.label]
+    if example.label:
+        if task == '1': label_id = emotion_label_map[example.label]
+        if task == '2': label_id = news_label_map[example.label]
+        if task == '3': label_id = nli_label_map[example.label]
+    else:
+        label_id = 0
 
     if ex_index < 5:
         tf.logging.info("*** Example ***")
@@ -391,7 +412,6 @@ def _truncate_seq_pair(tokens_a, tokens_b, max_length):
             tokens_b.pop()
 
 
-# todo 三个全连接层，然后分别对应不同的任务
 def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
                  labels, use_one_hot_embeddings, task):
     """Creates a classification model."""
@@ -453,16 +473,14 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
     predictions = tf.argmax(logits, axis=-1, output_type=tf.int64, name='pre_id')
 
     with tf.variable_scope("loss"):
-        # probabilities = tf.nn.softmax(logits, axis=-1)
         log_probs = tf.nn.log_softmax(logits, axis=-1)
         one_hot_labels = tf.one_hot(labels, depth=depth, dtype=tf.float32)
         per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
         loss = tf.reduce_mean(per_example_loss)
 
-        # todo 计算acc
         equals = tf.reduce_sum(tf.cast(tf.equal(predictions, labels), tf.int64))
         acc = equals / FLAGS.eval_batch_size
-        return loss, logits, acc
+        return loss, logits, acc, predictions
 
 
 def get_input_data(input_file, seq_len, batch_size, is_training):
@@ -482,7 +500,6 @@ def get_input_data(input_file, seq_len, batch_size, is_training):
         return input_ids, input_mask, segment_ids, labels
 
     dataset = tf.data.TFRecordDataset(input_file)
-    # 数据类别集中，需要较大的buffer_size，才能有效打乱，或者再 数据处理的过程中进行打乱
     if is_training:
         dataset = dataset.map(parser).batch(batch_size).shuffle(buffer_size=3000)
     else:
@@ -534,8 +551,7 @@ def main():
     # bert相关参数设置
     bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
 
-    # todo 模型create_model
-    loss, logits, acc = create_model(
+    loss, logits, acc, pre_id = create_model(
         bert_config,
         True,
         input_ids,
@@ -576,7 +592,7 @@ def main():
             saver_ = tf.train.Saver([v for v in tvars if v.name in initialized_variable_names])
             saver_.restore(sess, FLAGS.init_checkpoint)
             tvars = tf.global_variables()
-            initialized_vars = [v for v in tvars if v.name in initialized_variable_names]
+            # initialized_vars = [v for v in tvars if v.name in initialized_variable_names]
             not_initialized_vars = [v for v in tvars if v.name not in initialized_variable_names]
             print('all size %s; not initialized size %s' % (len(tvars), len(not_initialized_vars)))
             if len(not_initialized_vars):
@@ -606,19 +622,22 @@ def main():
                     segment_ids: seg,
                     labels: true_y,
                     task: task_id}
-            loss_out, acc_out = sess.run([loss, acc], feed_dict=feed)
-            return loss_out, acc_out
+            pre_out, acc_out = sess.run([pre_id, acc], feed_dict=feed)
+            return pre_out, acc_out
 
         # 开始训练
         for epoch in range(FLAGS.num_train_epochs):
-            print(f'start to train and the epoch:{epoch}')
-            #epoch_loss = do_train(sess, train_cnt, train_step)
-            #print(f'the epoch{epoch} loss is {epoch_loss}')
+            tf.logging.info(f'start to train and the epoch:{epoch}')
+            epoch_loss = do_train(sess, train_cnt, train_step, epoch)
+            tf.logging.info(f'the epoch{epoch} loss is {epoch_loss}')
             saver.save(sess, FLAGS.output_dir + 'bert.ckpt', global_step=epoch)
             # 每一个epoch开始验证模型
-            # do_eval(sess, dev_cnt, dev_step)
+            do_eval(sess, dev_cnt, dev_step)
+            pass
+        # 进行预测并保存结果
+        do_predict(label_list, process, tokenizer, dev_step)
 
-        print('the training is over!!!!')
+        tf.logging.info('the training is over!!!!')
 
 
 def set_random_task(train_cnt):
@@ -639,7 +658,7 @@ def set_random_task(train_cnt):
     return task_list
 
 
-def do_train(sess, train_cnt, train_step):
+def do_train(sess, train_cnt, train_step, epoch):
     """ 模型训练 """
     emotion_train_file = os.path.join(FLAGS.data_dir, 'emotion_train.record')
     news_train_file = os.path.join(FLAGS.data_dir, 'news_train.record')
@@ -671,7 +690,7 @@ def do_train(sess, train_cnt, train_step):
 
         _, step_loss = train_step(ids_train, mask_train, seg_train, y_train, task_id)
 
-        print(f'the step loss: {step_loss}')
+        tf.logging.info(f'epoch {epoch} the step loss: {step_loss}')
 
         total_loss += step_loss
 
@@ -679,20 +698,21 @@ def do_train(sess, train_cnt, train_step):
 
 
 def do_eval(sess, dev_cnt, dev_step):
-    # 数据目录路径
+    """ 模型验证 """
+    tf.logging.info(f'start to do eval')
     emotion_dev_file = os.path.join(FLAGS.data_dir, 'emotion_dev.record')
     news_dev_file = os.path.join(FLAGS.data_dir, 'news_dev.record')
     nli_dev_file = os.path.join(FLAGS.data_dir, 'nli_dev.record')
 
     ids1, mask1, seg1, labels1 = get_input_data(
         emotion_dev_file, FLAGS.max_seq_length,
-        FLAGS.train_batch_size, False)
+        FLAGS.eval_batch_size, False)
     ids2, mask2, seg2, labels2 = get_input_data(
         news_dev_file, FLAGS.max_seq_length,
-        FLAGS.train_batch_size, False)
+        FLAGS.eval_batch_size, False)
     ids3, mask3, seg3, labels3 = get_input_data(
         nli_dev_file, FLAGS.max_seq_length,
-        FLAGS.train_batch_size, False)
+        FLAGS.eval_batch_size, False)
 
     # 验证emotion的
     total_dev_acc = 0
@@ -702,7 +722,7 @@ def do_eval(sess, dev_cnt, dev_step):
             [ids1, mask1, seg1, labels1])
         _, dev_acc = dev_step(ids_dev, mask_dev, seg_dev, y_dev, 1)
         total_dev_acc += dev_acc
-    print(f'===the emotion acc is {total_dev_acc / step_cnt}===')
+    tf.logging.info(f'===the emotion acc is {total_dev_acc / step_cnt}===')
 
     total_dev_acc = 0
     step_cnt = dev_cnt[1] // FLAGS.eval_batch_size
@@ -711,7 +731,7 @@ def do_eval(sess, dev_cnt, dev_step):
             [ids2, mask2, seg2, labels2])
         _, dev_acc = dev_step(ids_dev, mask_dev, seg_dev, y_dev, 2)
         total_dev_acc += dev_acc
-    print(f'===the news acc is {total_dev_acc / step_cnt}===')
+    tf.logging.info(f'===the news acc is {total_dev_acc / step_cnt}===')
 
     total_dev_acc = 0
     step_cnt = dev_cnt[3] // FLAGS.eval_batch_size
@@ -720,7 +740,68 @@ def do_eval(sess, dev_cnt, dev_step):
             [ids3, mask3, seg3, labels3])
         _, dev_acc = dev_step(ids_dev, mask_dev, seg_dev, y_dev, 3)
         total_dev_acc += dev_acc
-    print(f'===the nli acc is {total_dev_acc / step_cnt}===')
+    tf.logging.info(f'===the nli acc is {total_dev_acc / step_cnt}===')
+
+
+def do_predict(label_list, process, tokenizer, dev_step):
+    """ 预测 """
+    tf.logging.info('start to do predict')
+    # 设置标签到索引的对应
+    emotion_map = {}
+    news_map = {}
+    nli_map = {}
+    for (i, label) in enumerate(label_list[0]):
+        emotion_map[i] = label
+    for (i, label) in enumerate(label_list[1]):
+        news_map[i] = label
+    for (i, label) in enumerate(label_list[2]):
+        nli_map[i] = label
+
+    test_examples = process.get_test_examples(FLAGS.data_dir)
+    emotion_res = []
+    news_res = []
+    nli_res = []
+    batch_size = 1
+    index = 0
+    for example in tqdm.tqdm(test_examples):
+        index += 1
+        feature = convert_single_example(index, example, label_list,
+                                         FLAGS.max_seq_length, tokenizer)
+        ids = np.reshape([feature.input_ids], (batch_size, FLAGS.max_seq_length))
+        mask = np.reshape([feature.input_mask], (batch_size, FLAGS.max_seq_length))
+        seg = np.reshape([feature.segment_ids], (batch_size, FLAGS.max_seq_length))
+        true_y = np.reshape([0], batch_size)
+
+        task_id = example.task
+        pred_res, _ = dev_step(ids, mask, seg, true_y, int(task_id))
+
+        guid = str(example.guid).strip()
+        if task_id == '1':
+            label_res = emotion_map.get(pred_res[0])
+            emotion_res.append(json.dumps({"id": str(guid), "label": str(label_res)}))
+        if task_id == '2':
+            label_res = news_map.get(pred_res[0])
+            news_res.append(json.dumps({"id": str(guid), "label": str(label_res)}))
+        if task_id == '3':
+            label_res = nli_map.get(pred_res[0])
+            nli_res.append(json.dumps({"id": str(guid), "label": str(label_res)}))
+
+    # 写入预测文件
+    with open('./data_path/ocemotion_predict.json', 'w', encoding='utf-8') as fr:
+        for res in emotion_res:
+            fr.write(res)
+            fr.write('\n')
+
+    with open('./data_path/tnews_predict.json', 'w', encoding='utf-8') as fr:
+        for res in news_res:
+            fr.write(res)
+            fr.write('\n')
+
+    with open('./data_path/ocnli_predict.json', 'w', encoding='utf-8') as fr:
+        for res in nli_res:
+            fr.write(res)
+            fr.write('\n')
+    tf.logging.info('predict and write file over!')
 
 
 if __name__ == "__main__":

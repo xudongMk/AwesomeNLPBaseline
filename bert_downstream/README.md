@@ -44,49 +44,30 @@ BERT是谷歌于2018年10月公开的一种预训练模型。该模型一经发�
 
 ```
 数据集来源：情感分类，是包含7个分类的细粒度情感性分析数据集，NLP中文预训练模型泛化能力挑战赛的数据集
-1.克隆项目
-git clone xxxx.git
-2.准备数据集
-将情感分类训练集和测试集存放在data_path目录下
-3.下载预训练模型
-https://github.com/ymcui/Chinese-BERT-wwm下载好预训练模型，将模型解压放入pre_train目录下
-4.运行训练脚本
-xxx
+运行脚本见train_classifier.py
 ```
 
 2.命名实体识别
 
 ```
-数据集来源：情感分类，是包含7个分类的细粒度情感性分析数据集，NLP中文预训练模型泛化能力挑战赛的数据集
-1.克隆项目
-git clone xxxx.git
-2.准备数据集
-将情感分类训练集和测试集存放在data_path目录下
-3.下载预训练模型
-https://github.com/ymcui/Chinese-BERT-wwm下载好预训练模型，将模型解压放入pre_train目录下
-4.运行训练脚本
-xxx
+数据集来源：CLUENER 细粒度命名实体识别,数据分为10个标签类别，详细信息见：https://github.com/CLUEbenchmark/CLUENER2020
+运行脚本见train_ner.py
 ```
 
 3.多任务学习
 
 ```
-数据集来源：情感分类，是包含7个分类的细粒度情感性分析数据集，NLP中文预训练模型泛化能力挑战赛的数据集
-1.克隆项目
-git clone xxxx.git
-2.准备数据集
-将情感分类训练集和测试集存放在data_path目录下
-3.下载预训练模型
-https://github.com/ymcui/Chinese-BERT-wwm下载好预训练模型，将模型解压放入pre_train目录下
-4.运行训练脚本
-xxx
+数据集来源：NLP中文预训练模型泛化能力挑战赛，https://tianchi.aliyun.com/competition/entrance/531841/introduction
+运行脚本见trian_multi_learning.py
+
+3个epoch没做任何tricks，当前的score是0.5717
 ```
 
 
 
 ## 拓展
 
-下面介绍两篇有意思的文章
+下面推荐两篇有意思的文章
 
 1.How to Fine-tune bert for Text-classification
 

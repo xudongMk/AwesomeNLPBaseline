@@ -18,7 +18,7 @@ import jieba
 filter = './?？；。（()）【】{}[]!！，,<>《》+'
 # 加载词典
 word_dict = {}
-with open('./data_path/vocab.txt') as fr:
+with open('./data_path/vocab.txt', encoding='utf-8') as fr:
     lines = fr.readlines()
 for line in lines:
     word = line.split('\t')[0]
@@ -55,7 +55,7 @@ def words_to_ids(words, word_dict):
 
 def predict_main(test_file, out_path):
     """ 预测主入口 """
-    model_path = './model_pb/1609149133'
+    model_path = './model_pb/1609247078'
     with tf.Session(graph=tf.Graph()) as sess:
         model = tf.saved_model.loader.load(sess, ['serve'], model_path)
         # print(model)
