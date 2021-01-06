@@ -2,10 +2,6 @@
 
 这里首先介绍一篇基于深度学习的命名实体识别综述，《A Survey on Deep Learning for Named Entity Recognition》，论文来源：https://arxiv.org/abs/1812.09449（2020年3月份发表在TKDE）
 
-https://zhuanlan.zhihu.com/p/141088583
-
-https://github.com/luopeixiang/named_entity_recognition
-
 **1.命名实体识别简介**
 
 命名实体识别（Named Entity Recognition，NER）旨在给定的文本中识别出属于预定义的类别片段（如人名、位置、组织等）。NER一直是很多自然语言应用的基础，如机器问答、文本摘要和机器翻译。
@@ -69,6 +65,8 @@ NER任务最早是由第六届语义理解会议（Sixth Message Understanding C
 
 使用Tensorflow1.x版本Estimator高阶api实现常见的命名实体识别算法，主要包括BiLstm+CRF、Bert、Bert+CRF。
 
+（当前只在本目录下实现了BiLstm+CRF，至于BERT的在bert_downstream目录下暂未实现）
+
 环境信息：
 
 tensorflow==1.13.1
@@ -110,11 +108,9 @@ todo
 
 ## NER的比赛
 
-1.达观数据的
+1.天池的比赛 https://tianchi.aliyun.com/competition/entrance/531824/introduction
 
-2.天池的比赛
-
-3.CLUE的评测
+2.CLUE的评测 https://www.cluebenchmarks.com/introduce.html
 
 
 
