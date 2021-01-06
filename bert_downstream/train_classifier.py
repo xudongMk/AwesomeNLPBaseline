@@ -2,38 +2,39 @@
 
 import collections
 import os
-import pandas as pd
+import json
+import tensorflow as tf
+
 import bert_master.modeling as modeling
 import bert_master.optimization as optimization
 import bert_master.tokenization as tokenization
-import tensorflow as tf
 
 flags = tf.flags
 FLAGS = flags.FLAGS
 
 # Required parameters
 flags.DEFINE_string(
-    "data_dir", './data_path/',
+    "data_dir", './data_path/tnews/',
     "The input data dir. Should contain the .tsv files (or other data files) "
     "for the task.")
 
 flags.DEFINE_string(
-    "bert_config_file", './pre_train/bert_config.json',
+    "bert_config_file", './pre_trained/bert_config.json',
     "The config json file corresponding to the pre-trained BERT model. "
     "This specifies the model architecture.")
 
-flags.DEFINE_string("task_name", 'emotion',
+flags.DEFINE_string("task_name", 'tnews',
                     "The name of the task to train.")
 
-flags.DEFINE_string("vocab_file", './pre_train/vocab.txt',
+flags.DEFINE_string("vocab_file", './pre_trained/vocab.txt',
                     "The vocabulary file that the BERT model was trained on.")
 
 flags.DEFINE_string(
-    "output_dir", './model_ckpt/text_class/',
+    "output_dir", './model_ckpt/tnews/',
     "The output directory where the model checkpoints will be written.")
 
 flags.DEFINE_string(
-    "init_checkpoint", './pre_train/bert_model.ckpt',
+    "init_checkpoint", './pre_trained/bert_model.ckpt',
     "Initial checkpoint (usually from a pre-trained BERT model).")
 
 flags.DEFINE_bool(
@@ -47,12 +48,12 @@ flags.DEFINE_integer(
     "Sequences longer than this will be truncated, and sequences shorter "
     "than this will be padded.")
 
-flags.DEFINE_bool("do_train", True, "Whether to run training.")
+flags.DEFINE_bool("do_train", False, "Whether to run training.")
 
-flags.DEFINE_bool("do_eval", True, "Whether to run eval on the dev set.")
+flags.DEFINE_bool("do_eval", False, "Whether to run eval on the dev set.")
 
 flags.DEFINE_bool(
-    "do_predict", False,
+    "do_predict", True,
     "Whether to run the model in inference mode on the test set.")
 
 flags.DEFINE_integer("train_batch_size", 16, "Total batch size for training.")
@@ -154,73 +155,46 @@ class InputFeatures(object):
         self.is_real_example = is_real_example
 
 
-class DataProcessor(object):
-    """Base class for data converters for sequence classification data sets."""
-
+class TnewsProcessor:
     def get_train_examples(self, data_dir):
-        """Gets a collection of `InputExample`s for the train set."""
-        raise NotImplementedError()
+        """获取训练集."""
+        return self._create_examples(
+            self._read_tsv(os.path.join(data_dir, "train.json")), "train")
 
     def get_dev_examples(self, data_dir):
-        """Gets a collection of `InputExample`s for the dev set."""
-        raise NotImplementedError()
+        """获取验证集."""
+        return self._create_examples(
+            self._read_tsv(os.path.join(data_dir, "dev.json")), "dev")
 
     def get_test_examples(self, data_dir):
-        """Gets a collection of `InputExample`s for prediction."""
-        raise NotImplementedError()
+        """获取测试集."""
+        return self._create_examples(
+            self._read_tsv(os.path.join(data_dir, "test.json")), "test")
 
     def get_labels(self):
-        """Gets the list of labels for this data set."""
-        raise NotImplementedError()
+        """填写新闻分类的类别标签"""
+        return ['100', '101', '102', '103', '104', '106', '107',
+                '108', '109', '110', '112', '113', '114', '115', '116']
 
-    @classmethod
-    def _read_tsv(cls, input_file, quotechar=None):
-        """Reads a tab separated value file."""
-        data = pd.read_csv(input_file, sep='\t', encoding='utf-8')
-        data.culomns = ['id', 'text', 'label']
-        lines = []
-        for index, row in data.iterrows():
-            lines.append((row['text'], row['label']))
+    def _read_tsv(self, input_file):
+        """读取数据集"""
+        with open(input_file, encoding='utf-8') as fr:
+            lines = fr.readlines()
         return lines
-
-
-class EmotionProcessor(DataProcessor):
-    """Processor for the CoLA data set (GLUE version)."""
-
-    def get_train_examples(self, data_dir):
-        """See base class."""
-        return self._create_examples(
-            self._read_tsv(os.path.join(data_dir, "train_emotion.csv")), "train")
-
-    def get_dev_examples(self, data_dir):
-        """See base class."""
-        return self._create_examples(
-            self._read_tsv(os.path.join(data_dir, "test_emotion.csv")), "dev")
-
-    def get_test_examples(self, data_dir):
-        """See base class."""
-        return self._create_examples(
-            self._read_tsv(os.path.join(data_dir, "test_emotion.csv")), "test")
-
-    def get_labels(self):
-        """See base class."""
-        # 填写情感分类的类别标签
-        return ['sadness', 'anger', 'happiness', 'fear', 'like', 'disgust', 'surprise']
 
     def _create_examples(self, lines, set_type):
         """Creates examples for the training and dev sets."""
         examples = []
         for (i, line) in enumerate(lines):
-            # Only the test set has a header
-            if set_type == "test":
-                continue
+            json_str = json.loads(line)
             guid = "%s-%s" % (set_type, i)
             if set_type == "test":
-                text_a = tokenization.convert_to_unicode(line[0])
-                label = "0"
+                text_a = tokenization.convert_to_unicode(json_str['sentence'])
+                label = None
+                guid = json_str['id']
             else:
-                text_a = tokenization.convert_to_unicode(line[0])
-                label = tokenization.convert_to_unicode(line[1])
+                text_a = tokenization.convert_to_unicode(json_str['sentence'])
+                label = tokenization.convert_to_unicode(json_str['label'])
             examples.append(
                 InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
         return examples
@@ -273,8 +247,6 @@ def convert_single_example(ex_index, example, label_list, max_seq_length,
 
     input_ids = tokenizer.convert_tokens_to_ids(tokens)
 
-    # The mask has 1 for real tokens and 0 for padding tokens. Only real
-    # tokens are attended to.
     input_mask = [1] * len(input_ids)
 
     # Zero-pad up to the sequence length.
@@ -287,7 +259,11 @@ def convert_single_example(ex_index, example, label_list, max_seq_length,
     assert len(input_mask) == max_seq_length
     assert len(segment_ids) == max_seq_length
 
-    label_id = label_map[example.label]
+    if example.label:
+        label_id = label_map[example.label]
+    else:
+        label_id = 0
+
     if ex_index < 5:
         tf.logging.info("*** Example ***")
         tf.logging.info("guid: %s" % (example.guid))
@@ -367,8 +343,6 @@ def file_based_input_fn_builder(input_file, seq_length, is_training,
         """The actual input function."""
         batch_size = params["batch_size"]
 
-        # For training, we want a lot of parallel reading and shuffling.
-        # For eval, we want no shuffling and parallel reading doesn't matter.
         d = tf.data.TFRecordDataset(input_file)
         if is_training:
             d = d.repeat()
@@ -419,15 +393,14 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
 
     output_bias = tf.get_variable(
         "output_bias", [num_labels], initializer=tf.zeros_initializer())
-    # todo 代码
+
     with tf.variable_scope("loss"):
         if is_training:
-            # I.e., 0.1 dropout
             output_layer = tf.nn.dropout(output_layer, keep_prob=0.9)
 
         logits = tf.matmul(output_layer, output_weights, transpose_b=True)
         logits = tf.nn.bias_add(logits, output_bias)
-        probabilities = tf.nn.softmax(logits, axis=-1)
+
         log_probs = tf.nn.log_softmax(logits, axis=-1)
 
         one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
@@ -435,7 +408,9 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
         per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
         loss = tf.reduce_mean(per_example_loss)
 
-        return loss, per_example_loss, logits, probabilities
+        predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+
+        return loss, per_example_loss, predictions
 
 
 def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
@@ -462,7 +437,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 
         is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
-        (total_loss, per_example_loss, logits, probabilities) = create_model(
+        (total_loss, per_example_loss, predictions) = create_model(
             bert_config, is_training, input_ids, input_mask, segment_ids, label_ids,
             num_labels, use_one_hot_embeddings)
 
@@ -473,7 +448,6 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
             (assignment_map, initialized_variable_names
              ) = modeling.get_assignment_map_from_checkpoint(tvars, init_checkpoint)
             if use_tpu:
-
                 def tpu_scaffold():
                     tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
                     return tf.train.Scaffold()
@@ -501,9 +475,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
                 train_op=train_op,
                 scaffold_fn=scaffold_fn)
         elif mode == tf.estimator.ModeKeys.EVAL:
-
-            def metric_fn(per_example_loss, label_ids, logits, is_real_example):
-                predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+            def metric_fn(per_example_loss, label_ids, is_real_example):
                 accuracy = tf.metrics.accuracy(
                     labels=label_ids, predictions=predictions, weights=is_real_example)
                 loss = tf.metrics.mean(values=per_example_loss, weights=is_real_example)
@@ -513,7 +485,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
                 }
 
             eval_metrics = (metric_fn,
-                            [per_example_loss, label_ids, logits, is_real_example])
+                            [per_example_loss, label_ids, is_real_example])
             output_spec = tf.contrib.tpu.TPUEstimatorSpec(
                 mode=mode,
                 loss=total_loss,
@@ -522,36 +494,18 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
         else:
             output_spec = tf.contrib.tpu.TPUEstimatorSpec(
                 mode=mode,
-                predictions={"probabilities": probabilities},
+                predictions={"predictions": predictions},
                 scaffold_fn=scaffold_fn)
         return output_spec
 
     return model_fn
 
 
-# This function is not used by this file but is still used by the Colab and
-# people who depend on it.
-def convert_examples_to_features(examples, label_list, max_seq_length,
-                                 tokenizer):
-    """Convert a set of `InputExample`s to a list of `InputFeatures`."""
-
-    features = []
-    for (ex_index, example) in enumerate(examples):
-        if ex_index % 10000 == 0:
-            tf.logging.info("Writing example %d of %d" % (ex_index, len(examples)))
-
-        feature = convert_single_example(ex_index, example, label_list,
-                                         max_seq_length, tokenizer)
-
-        features.append(feature)
-    return features
-
-
 def main():
     tf.logging.set_verbosity(tf.logging.INFO)
 
     processors = {
-        "emotion": EmotionProcessor,
+        "tnews": TnewsProcessor,
     }
 
     tokenization.validate_case_matches_checkpoint(FLAGS.do_lower_case,
@@ -629,7 +583,7 @@ def main():
         predict_batch_size=FLAGS.predict_batch_size)
 
     if FLAGS.do_train:
-        train_file = os.path.join(FLAGS.output_dir, "train.tf_record")
+        train_file = os.path.join(FLAGS.data_dir, "train.tf_record")
         file_based_convert_examples_to_features(
             train_examples, label_list, FLAGS.max_seq_length, tokenizer, train_file)
         tf.logging.info("***** Running training *****")
@@ -650,7 +604,7 @@ def main():
             while len(eval_examples) % FLAGS.eval_batch_size != 0:
                 eval_examples.append(PaddingInputExample())
 
-        eval_file = os.path.join(FLAGS.output_dir, "eval.tf_record")
+        eval_file = os.path.join(FLAGS.data_dir, "eval.tf_record")
         file_based_convert_examples_to_features(
             eval_examples, label_list, FLAGS.max_seq_length, tokenizer, eval_file)
 
@@ -662,8 +616,6 @@ def main():
 
         # This tells the estimator to run through the entire set.
         eval_steps = None
-        # However, if running eval on the TPU, you will need to specify the
-        # number of steps.
         if FLAGS.use_tpu:
             assert len(eval_examples) % FLAGS.eval_batch_size == 0
             eval_steps = int(len(eval_examples) // FLAGS.eval_batch_size)
@@ -685,17 +637,23 @@ def main():
                 writer.write("%s = %s\n" % (key, str(result[key])))
 
     if FLAGS.do_predict:
-        # todo 需要改写
+        # label dict的设置
+        label_dict = {0: 109, 1: 104, 2: 102, 3: 113,
+                      4: 107, 5: 101, 6: 103, 7: 110,
+                      8: 108, 9: 116, 10: 112, 11: 115,
+                      12: 106, 13: 100, 14: 114}
+        label_desc = {100: "news_story", 101: "news_culture", 102: "news_entertainment",
+                      103: "news_sports", 104: "news_finance", 106: "news_house",
+                      107: "news_car", 108: "news_edu", 109: "news_tech",
+                      110: "news_military", 112: "news_travel", 113: "news_world",
+                      114: "news_stock", 115: "news_agriculture", 116: "news_game"}
+
         predict_examples = processor.get_test_examples(FLAGS.data_dir)
         num_actual_predict_examples = len(predict_examples)
-        if FLAGS.use_tpu:
-            while len(predict_examples) % FLAGS.predict_batch_size != 0:
-                predict_examples.append(PaddingInputExample())
-
-        predict_file = os.path.join(FLAGS.output_dir, "predict.tf_record")
+        test_file = os.path.join(FLAGS.data_dir, "test.tf_record")
         file_based_convert_examples_to_features(predict_examples, label_list,
                                                 FLAGS.max_seq_length, tokenizer,
-                                                predict_file)
+                                                test_file)
 
         tf.logging.info("***** Running prediction*****")
         tf.logging.info("  Num examples = %d (%d actual, %d padding)",
@@ -705,27 +663,25 @@ def main():
 
         predict_drop_remainder = True if FLAGS.use_tpu else False
         predict_input_fn = file_based_input_fn_builder(
-            input_file=predict_file,
+            input_file=test_file,
             seq_length=FLAGS.max_seq_length,
             is_training=False,
             drop_remainder=predict_drop_remainder)
 
-        result = estimator.predict(input_fn=predict_input_fn)
+        results = estimator.predict(input_fn=predict_input_fn)
 
-        output_predict_file = os.path.join(FLAGS.output_dir, "test_results.csv")
-        with tf.gfile.GFile(output_predict_file, "w") as writer:
-            num_written_lines = 0
-            tf.logging.info("***** Predict results *****")
-            for (i, prediction) in enumerate(result):
-                probabilities = prediction["probabilities"]
-                if i >= num_actual_predict_examples:
-                    break
-                output_line = "\t".join(
-                    str(class_probability)
-                    for class_probability in probabilities) + "\n"
-                writer.write(output_line)
-                num_written_lines += 1
-        assert num_written_lines == num_actual_predict_examples
+        output_file = os.path.join(FLAGS.output_dir, 'news_predict.json')
+        with open(output_file, 'w', encoding='utf-8') as fr:
+            print(results)
+            for index, result in enumerate(results):
+                pre_id = result['predictions']
+                print(f'the index is {index} preid is {pre_id}')
+                label = label_dict.get(pre_id)
+                label_d = label_desc.get(label)
+
+                json_str = json.dumps({"id": index, "label": str(label), "label_desc": label_d})
+                fr.write(json_str)
+                fr.write('\n')
 
 
 if __name__ == "__main__":
