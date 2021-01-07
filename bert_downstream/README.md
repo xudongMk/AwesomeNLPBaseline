@@ -45,6 +45,10 @@ BERT是谷歌于2018年10月公开的一种预训练模型。该模型一经发�
 ```
 数据集来源：情感分类，是包含7个分类的细粒度情感性分析数据集，NLP中文预训练模型泛化能力挑战赛的数据集
 运行脚本见train_classifier.py
+
+3个epoch，使用的是哈工大的BERT-wwm-ext, Chinese，未做任何的tricks，在CLUE上提交的结果是56.04
+之前使用BiLstm线上提交的结果是50.92（代码见text_classification中）
+（[ALBERT-xxlarge](https://github.com/google-research/albert) ：59.46，目前[UER-ensemble](https://github.com/dbiir/UER-py)：72.20）
 ```
 
 2.命名实体识别
@@ -52,6 +56,7 @@ BERT是谷歌于2018年10月公开的一种预训练模型。该模型一经发�
 ```
 数据集来源：CLUENER 细粒度命名实体识别,数据分为10个标签类别，详细信息见：https://github.com/CLUEbenchmark/CLUENER2020
 运行脚本见train_ner.py
+# todo next
 ```
 
 3.多任务学习
@@ -61,6 +66,7 @@ BERT是谷歌于2018年10月公开的一种预训练模型。该模型一经发�
 运行脚本见trian_multi_learning.py
 
 3个epoch没做任何tricks，当前的score是0.5717
+3个epoch没做任何的tricks，使用roberta-large，score是0.6236
 ```
 
 
