@@ -102,7 +102,65 @@ python==3.7
 
 ## 示例
 
-todo
+下面使用中文任务测评基准(CLUE benchmark)的CLUENER数据进行demo示例演示：
+
+数据集下载地址[[CLUENER细粒度命名实体识别](https://github.com/CLUEbenchmark/CLUENER2020)]，该数据由CLUEBenchMark整理，数据分为10个标签类别分别为: 地址（address），书名（book），公司（company），游戏（game），政府（government），电影（movie），姓名（name），组织机构（organization），职位（position），景点（scene）
+
+数据集分布：
+
+```
+训练集：10748
+验证集集：1343
+
+按照不同标签类别统计，训练集数据分布如下（注：一条数据中出现的所有实体都进行标注，如果一条数据出现两个地址（address）实体，那么统计地址（address）类别数据的时候，算两条数据）：
+【训练集】标签数据分布如下：
+地址（address）:2829
+书名（book）:1131
+公司（company）:2897
+游戏（game）:2325
+政府（government）:1797
+电影（movie）:1109
+姓名（name）:3661
+组织机构（organization）:3075
+职位（position）:3052
+景点（scene）:1462
+
+【验证集】标签数据分布如下：
+地址（address）:364
+书名（book）:152
+公司（company）:366
+游戏（game）:287
+政府（government）:244
+电影（movie）:150
+姓名（name）:451
+组织机构（organization）:344
+职位（position）:425
+景点（scene）:199
+```
+
+**1.数据EDA：**
+
+省略，需要的可以自己分析一下数据集的分布情况
+
+**2.数据预处理：**
+
+转换BIO形式，具体conver_bio.py，将CLUE提供的数据集转换为BIO标注形式；运行preprocess.py将数据集转换为id形式并保存为pkl形式。
+
+**3.模型训练：**
+
+代码见ner_main.py，参数设置的时候有几个参数需要根据自己的数据分布来设置：
+
+- vocab_size：这里的大小，一般需要根据自己生成的vocab.txt中词表的大小来设置
+- num_tags：类别标签的数量，算上O，这里是21类
+- train_path/eval_path：数据集的路径
+
+其他的参数视个人情况而定
+
+**4.开始预测并提交结果**
+
+预测代码见inference.py
+
+#todo next 只完成了一部分，写入文件的部分暂时未完成。因为其提交的文件格式有点难受....太细化了...
 
 
 
@@ -116,8 +174,8 @@ todo
 
 ## 扩展
 
-NER的应用：
+- 美团搜索中NER技术的探索和实践：https://tech.meituan.com/2020/07/23/ner-in-meituan-nlp.html
 
-https://tech.meituan.com/2020/07/23/ner-in-meituan-nlp.html
 
-美团搜索中NER技术的探索和实践
+
+

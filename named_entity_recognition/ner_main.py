@@ -27,8 +27,7 @@ parser.add_argument("--hidden_dim", type=int, default=300)
 parser.add_argument("--num_tags", type=int, default=21)
 parser.add_argument("--drop_out", type=float, default=0.1)
 parser.add_argument("--batch_size", type=int, default=16)
-parser.add_argument("--epoch", type=int, default=1)
-parser.add_argument("--type", type=str, default='lstm', help='[lstm, textcnn...]')
+parser.add_argument("--epoch", type=int, default=50)
 parser.add_argument("--lr", type=float, default=1e-4,
                     help='the learning rate for optimizer')
 
@@ -61,28 +60,14 @@ def init_data(file_name, type=None):
     return train_input if type == 'train' else test_input
 
 
-def make_model():
-    """
-    build model
-    :return:
-    """
-    vocab_size = ARGS.vocab_size
-    emb_size = ARGS.emb_size
-
-    if ARGS.type == 'lstm':
-        model = BiLstm_Crf(ARGS, vocab_size, emb_size)
-    else:
-        pass
-
-    return model
-
-
 def model_fn(features, labels, mode, params):
     """
     build model fn
     :return:
     """
-    model = make_model()
+    vocab_size = ARGS.vocab_size
+    emb_size = ARGS.emb_size
+    model = BiLstm_Crf(ARGS, vocab_size, emb_size)
 
     if isinstance(features, dict):
         features = features['words'], features['words_len']

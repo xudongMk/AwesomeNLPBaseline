@@ -148,7 +148,7 @@ python==3.7
 
 **4.开始预测并提交结果**
 
-预测代码见inferecen.py，最后在CLUE上提交的结果是50.92（[ALBERT-xxlarge](https://github.com/google-research/albert) ：59.46，目前[UER-ensemble](https://github.com/dbiir/UER-py)：72.20）
+预测代码见inferece.py，最后在CLUE上提交的结果是50.92（[ALBERT-xxlarge](https://github.com/google-research/albert) ：59.46，目前[UER-ensemble](https://github.com/dbiir/UER-py)：72.20）
 
 ## 中文文本分类比赛OR评测
 
