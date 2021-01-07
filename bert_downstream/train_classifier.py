@@ -48,9 +48,9 @@ flags.DEFINE_integer(
     "Sequences longer than this will be truncated, and sequences shorter "
     "than this will be padded.")
 
-flags.DEFINE_bool("do_train", False, "Whether to run training.")
+flags.DEFINE_bool("do_train", True, "Whether to run training.")
 
-flags.DEFINE_bool("do_eval", False, "Whether to run eval on the dev set.")
+flags.DEFINE_bool("do_eval", True, "Whether to run eval on the dev set.")
 
 flags.DEFINE_bool(
     "do_predict", True,
@@ -465,14 +465,15 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
                             init_string)
 
         if mode == tf.estimator.ModeKeys.TRAIN:
-
+            # 添加loss的hook，不然在GPU/CPU上不打印loss
+            logging_hook = tf.train.LoggingTensorHook({"loss": total_loss}, every_n_iter=10)
             train_op = optimization.create_optimizer(
                 total_loss, learning_rate, num_train_steps, num_warmup_steps, use_tpu)
-
             output_spec = tf.contrib.tpu.TPUEstimatorSpec(
                 mode=mode,
                 loss=total_loss,
                 train_op=train_op,
+                training_hooks=[logging_hook],
                 scaffold_fn=scaffold_fn)
         elif mode == tf.estimator.ModeKeys.EVAL:
             def metric_fn(per_example_loss, label_ids, is_real_example):
@@ -638,10 +639,10 @@ def main():
 
     if FLAGS.do_predict:
         # label dict的设置
-        label_dict = {0: 109, 1: 104, 2: 102, 3: 113,
-                      4: 107, 5: 101, 6: 103, 7: 110,
-                      8: 108, 9: 116, 10: 112, 11: 115,
-                      12: 106, 13: 100, 14: 114}
+        label_dict = {0: 100, 1: 101, 2: 102, 3: 103,
+                      4: 104, 5: 106, 6: 107, 7: 108,
+                      8: 109, 9: 110, 10: 112, 11: 113,
+                      12: 114, 13: 115, 14: 116}
         label_desc = {100: "news_story", 101: "news_culture", 102: "news_entertainment",
                       103: "news_sports", 104: "news_finance", 106: "news_house",
                       107: "news_car", 108: "news_edu", 109: "news_tech",

@@ -633,7 +633,7 @@ def main():
             saver.save(sess, FLAGS.output_dir + 'bert.ckpt', global_step=epoch)
             # 每一个epoch开始验证模型
             do_eval(sess, dev_cnt, dev_step)
-            pass
+
         # 进行预测并保存结果
         do_predict(label_list, process, tokenizer, dev_step)
 
