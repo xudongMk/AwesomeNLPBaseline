@@ -64,11 +64,64 @@ def predict_main(test_file, out_path):
             feed = {input_id: [text_features], input_len: [text_label]}
             score = sess.run(out, feed_dict=feed)
 
-            print(score)
             cnt += 1
-            # todo next
-            if cnt > 10:
-                break
+            tags = [tag_ids[tag] for tag in score[0]]
+            # print(tags)
+            res_words, res_pos = get_result(text, tags)
+            rs = {}
+            for w, t in zip(res_words, res_pos):
+                rs[t] = rs.get(t, []) + [w]
+            pres = {}
+            for t, ws in rs.items():
+                temp = {}
+                for w in ws:
+                    word = text[w[0]: w[1] + 1]
+                    temp[word] = temp.get(word, []) + [w]
+                pres[t] = temp
+            output_line = json.dumps({'id': id, 'label': pres}, ensure_ascii=False)
+            res_list.append(output_line)
+            # print(output_line)
+        # write to file
+        with open(out_path, 'w', encoding='utf-8') as fr:
+            for res in res_list:
+                fr.write(res)
+                fr.write('\n')
+
+
+def get_result(text, tags):
+    """ 改写成clue要提交的格式 """
+    result_words = []
+    result_pos = []
+    temp_word = []
+    temp_pos = ''
+    for i in range(min(len(text), len(tags))):
+        if tags[i].startswith('O'):
+            if len(temp_word) > 0:
+                result_words.append([min(temp_word), max(temp_word)])
+                result_pos.append(temp_pos)
+            temp_word = []
+            temp_pos = ''
+        elif tags[i].startswith('B-'):
+            if len(temp_word) > 0:
+                result_words.append([min(temp_word), max(temp_word)])
+                result_pos.append(temp_pos)
+            temp_word = [i]
+            temp_pos = tags[i].split('-')[1]
+        elif tags[i].startswith('I-'):
+            if len(temp_word) > 0:
+                temp_word.append(i)
+                if temp_pos == '':
+                    temp_pos = tags[i].split('-')[1]
+        else:
+            if len(temp_word) > 0:
+                temp_word.append(i)
+                if temp_pos == '':
+                    temp_pos = tags[i].split('-')[1]
+                result_words.append([min(temp_word), max(temp_word)])
+                result_pos.append(temp_pos)
+            temp_word = []
+            temp_pos = ''
+    return result_words, result_pos
 
 
 if __name__ == '__main__':
