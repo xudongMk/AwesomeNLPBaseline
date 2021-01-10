@@ -46,13 +46,13 @@ Deep Learning Based Text Classification: A Comprehensive Review一文中提到�
 | THUCNews | THUCNews是根据新浪新闻RSS订阅频道2005~2011年间的历史数据筛选过滤生成。<br />包含财经、彩票、房产、股票、家居、教育等14个类别。<br />原始数据集见：[链接](http://thuctc.thunlp.org/#%E4%B8%AD%E6%96%87%E6%96%87%E6%9C%AC%E5%88%86%E7%B1%BB%E6%95%B0%E6%8D%AE%E9%9B%86THUCNews) | [下载地址](http://thuctc.thunlp.org/#%E4%B8%AD%E6%96%87%E6%96%87%E6%9C%AC%E5%88%86%E7%B1%BB%E6%95%B0%E6%8D%AE%E9%9B%86THUCNews) |
 | 今日头条 | 来源于今日头条，为短文本分类任务，数据包含15个类别           | [下载地址](https://storage.googleapis.com/cluebenchmark/tasks/tnews_public.zip) |
 | IFLYTEK  | 1.7万多条关于app应用描述的长文本标注数据，包含和日常生活相关的各类应用主题，共119个类别 | [下载地址](https://storage.googleapis.com/cluebenchmark/tasks/iflytek_public.zip) |
-| 新闻标题 | 数据集来源于Kesci平台，为新闻标题领域短文本分类任务。<br />内容大多为短文本标题(length<50)，数据包含15个类别，共38w条样本 | [下载地址](https://pan.baidu.com/s/1vyGSIycsan3YWHEjBod9pw) |
-| 复大文本 | 数据集来源于复旦大学，为短文本分类任务，数据包含20个类别，共9804篇文档 | [下载地址](https://pan.baidu.com/s/1vyGSIycsan3YWHEjBod9pw) |
+| 新闻标题 | 数据集来源于Kesci平台，为新闻标题领域短文本分类任务。<br />内容大多为短文本标题(length<50)，数据包含15个类别，共38w条样本 | [下载地址](https://pan.baidu.com/s/1vyGSIycsan3YWHEjBod9pw)<br />提取码：lrmv |
+| 复大文本 | 数据集来源于复旦大学，为短文本分类任务，数据包含20个类别，共9804篇文档 | [下载地址](https://pan.baidu.com/s/1vyGSIycsan3YWHEjBod9pw)<br />提取码：lrmv |
 | OCNLI    | 中文原版自然语言推理，是第一个非翻译的、使用原生汉语的大型中文自然语言推理数据集<br />详细见https://github.com/CLUEbenchmark/OCNLI | [下载地址](https://storage.googleapis.com/cluebenchmark/tasks/ocnli_public.zip) |
-| 情感分析 | OCEMOTION–中文情感分类，对应文章https://www.aclweb.org/anthology/L16-1291.pdf<br />原始数据集未找到，只有一部分数据 | [下载地址](https://pan.baidu.com/s/1vyGSIycsan3YWHEjBod9pw) |
+| 情感分析 | OCEMOTION–中文情感分类，对应文章https://www.aclweb.org/anthology/L16-1291.pdf<br />原始数据集未找到，只有一部分数据 | [下载地址](https://pan.baidu.com/s/1vyGSIycsan3YWHEjBod9pw)<br />提取码：lrmv |
 | 更新ing  | ...                                                          | ...                                                          |
 
-还有一些其他的中文文本数据集，可以在CLUE上搜索，CLUE地址：https://www.cluebenchmarks.com/ ，但是下载需要注册账号，有的链接失效，有的限制日下载次数，这里放到百度网盘供下载学习使用，提取码：lrmv。（请勿用于商业目的）
+还有一些其他的中文文本数据集，可以在CLUE上搜索，CLUE地址：https://www.cluebenchmarks.com/ ，但是下载需要注册账号，有的链接失效，有的限制日下载次数，这里放到百度网盘供下载学习使用。（请勿用于商业目的）
 
 ## 文本分类Baseline算法实现
 
@@ -148,7 +148,7 @@ python==3.7
 
 **4.开始预测并提交结果**
 
-预测代码见inferece.py，最后在CLUE上提交的结果是50.92（[ALBERT-xxlarge](https://github.com/google-research/albert) ：59.46，目前[UER-ensemble](https://github.com/dbiir/UER-py)：72.20）
+预测代码见inferecen.py，最后在CLUE上提交的结果是50.92（[ALBERT-xxlarge](https://github.com/google-research/albert) ：59.46，目前[UER-ensemble](https://github.com/dbiir/UER-py)：72.20）
 
 ## 中文文本分类比赛OR评测
 
